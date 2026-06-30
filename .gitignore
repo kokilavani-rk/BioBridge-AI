@@ -1,0 +1,25 @@
+# Environment variables (contains Gemini API key)
+.env
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# VS Code settings
+.vscode/
+
+# Streamlit cache and config
+.streamlit/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db 

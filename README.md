@@ -94,6 +94,50 @@ Creates memorable mnemonics that help users retain biological terminology and co
 
 ---
 
+## 🏗️ Architecture
+
+BioBridge AI follows a simple, modular architecture. Each part of the app has one clear job, and everything connects through a small number of shared components.
+
+```
+                User
+                 │
+                 ▼
+        app.py (Streamlit UI)
+                 │
+   routes input to the selected feature
+                 │
+                 ▼
+      Feature module (src/*.py)
+   concept_explainer / doubt_solver /
+   quiz_generator / mnemonic_generator
+                 │
+        ┌────────┴────────┐
+        │                  │
+ Doubt Solver only:   All features:
+ validate_input()     build prompt →
+ (rule-based check    call Gemini API
+  before any API call)     │
+        │                  │
+        └────────┬─────────┘
+                  ▼
+          src/logger.py → log_event()
+                  │
+                  ▼
+        logs/biobridge_log.jsonl
+```
+
+**How it works, end to end:**
+
+1. `app.py` is the only entry point. It shows the feature selector and routes the user's input to the matching module in `src/`.
+2. Each feature module is self-contained — it builds its own prompt, calls the Gemini API (`gemini-2.5-flash`) directly, and handles its own errors with try/except.
+3. The Doubt Solver is the only feature with an extra step before the Gemini call: `validate_input()` checks the question against four rule-based categories (harmful, medical, homework, off-topic) and can reject it without ever calling the API.
+4. Every feature call — whether it succeeds, fails, or gets rejected — is recorded through one shared `log_event()` function in `src/logger.py`, which writes a fixed seven-field entry to `logs/biobridge_log.jsonl`.
+5. Shared values (feature names, status strings, rejection reasons) live in `src/constants.py` so they're never hardcoded more than once across the four feature files.
+
+This structure means any single feature — including its prompt, its logic, and its logging — can be read, tested, or changed without touching the other three.
+
+---
+
 ## 🛡️ Safety Validation
 
 BioBridge AI performs deterministic rule-based validation **before** sending prompts to the language model.
@@ -151,11 +195,11 @@ BioBridge-AI/
 │
 └── src/
     ├── concept_explainer.py
+    ├── constants.py
     ├── doubt_solver.py
-    ├── mnemonic_generator.py
-    ├── quiz_generator.py
     ├── logger.py
-    └── constants.py
+    ├── mnemonic_generator.py
+    └── quiz_generator.py
 ```
 
 > **Note:** A `logs/` folder containing `biobridge_log.jsonl` is created automatically at runtime and is excluded from version control via `.gitignore`.
@@ -229,18 +273,33 @@ The application will open in your default web browser.
 
 ## 📸 Screenshots
 
-*Coming soon.*
+### Home
+![Home](screenshots/01-home.png)
 
-Suggested screenshots:
+### Mnemonic Generator
+![Mnemonic Generator](screenshots/02-mnemonic-generator.png)
 
-- Home Page
-- Concept Explainer
-- Doubt Solver
-- Quiz Generator
-- Quiz Results
-- Mnemonic Generator
-- Safety Validation Example
-- JSONL Logging
+### Concept Explainer
+![Concept Explainer — Input and Confirmation](screenshots/03-concept-explainer-1.png)
+![Concept Explainer — Result](screenshots/04-concept-explainer-2.png)
+
+### Quiz Generator
+![Quiz Generator — Question View](screenshots/05-quiz-generator-1.png)
+![Quiz Generator — Question View](screenshots/06-quiz-generator-2.png)
+
+### Quiz Results
+![Quiz Results](screenshots/07-quiz-generator-results-1.png)
+![Quiz Results](screenshots/08-quiz-generator-results-2.png)
+
+### Doubt Solver
+![Doubt Solver](screenshots/09-doubt-solver-1.png)
+![Doubt Solver — Rejection Example](screenshots/10-doubt-solver-2.png)
+
+### Safety Validation Example
+![Safety Validation](screenshots/11-safety-validation.png)
+
+### JSONL Logging
+![Logging](screenshots/12-logging.png)
 
 ---
 
